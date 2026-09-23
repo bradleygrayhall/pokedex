@@ -1,6 +1,7 @@
 import { Cache } from "./pokecache.js";
 
-
+// Small API client around the PokeAPI endpoints used by the CLI. Command files
+// ask for domain data; URL construction, HTTP errors, and caching stay here.
 export class PokeAPI {
   private static readonly baseURL = "https://pokeapi.co/api/v2";
   private cache: Cache;
@@ -10,50 +11,69 @@ export class PokeAPI {
   }
 
   async fetchLocations(pageURL?: string): Promise<ShallowLocations> {
-    const url = pageURL || `${PokeAPI.baseURL}/location-area`
-    const store = this.cache.get<ShallowLocations>(url);
-    if (store !== undefined) {
-      return store
+    // An empty/omitted page URL means the first location-area page. Subsequent
+    // calls may pass the opaque next/previous URL returned by PokeAPI.
+    const url = pageURL || `${PokeAPI.baseURL}/location-area`;
+
+    const cached = this.cache.get<ShallowLocations>(url);
+    if (cached !== undefined) {
+      return cached;
     }
+
     const response = await fetch(url);
     if (!response.ok) {
-        throw new Error(`${response.status} ${response.statusText}`);
+      throw new Error(`${response.status} ${response.statusText}`);
     }
-    const jsoned : ShallowLocations = await response.json()
-    this.cache.add(url,jsoned);
-    return jsoned
+
+    const data: ShallowLocations = await response.json();
+    this.cache.add(url, data);
+    return data;
   }
 
   async fetchLocation(locationName: string): Promise<Location> {
-    const url = `${PokeAPI.baseURL}/location-area/${locationName}`
-    const store = this.cache.get<Location>(url);
-    if (store !== undefined) {
-      return store
+    const url = `${PokeAPI.baseURL}/location-area/${locationName}`;
+
+    const cached = this.cache.get<Location>(url);
+    if (cached !== undefined) {
+      return cached;
     }
+
     const response = await fetch(url);
     if (!response.ok) {
-        throw new Error(`${response.status} ${response.statusText}`);
+      throw new Error(`${response.status} ${response.statusText}`);
     }
-    const jsoned : Location = await response.json()
-    this.cache.add(url,jsoned);
-    return jsoned
+
+    const data: Location = await response.json();
+    this.cache.add(url, data);
+    return data;
   }
-  async fetchPokemon(name:string): Promise<Pokemon> {
-    const url = `${PokeAPI.baseURL}/pokemon/${name}`
-    const store = this.cache.get<Pokemon>(url);
-    if (store !== undefined) {
-      return store
+
+  async fetchPokemon(name: string): Promise<Pokemon> {
+    const url = `${PokeAPI.baseURL}/pokemon/${name}`;
+
+    const cached = this.cache.get<Pokemon>(url);
+    if (cached !== undefined) {
+      return cached;
     }
+
     const response = await fetch(url);
     if (!response.ok) {
-        throw new Error(`${response.status} ${response.statusText}`);
+      throw new Error(`${response.status} ${response.statusText}`);
     }
-    const jsoned : Pokemon = await response.json()
-    this.cache.add(url,jsoned);
-    return jsoned
+
+    const data: Pokemon = await response.json();
+    this.cache.add(url, data);
+    return data;
   }
+
+  // NEXT BUILD: if API use grows, extract the repeated cache -> fetch -> validate
+  // -> parse sequence into one private helper. That also gives tests one place to
+  // mock transport/error behavior rather than testing three nearly identical paths.
 }
 
+// These interfaces intentionally describe only the PokeAPI fields this program
+// currently consumes. Add fields as features need them instead of mirroring the
+// entire upstream API schema.
 export type ShallowLocations = {
   count: number,
   next: string | null,
@@ -96,7 +116,6 @@ export interface Version {
   name: string
   url: string
 }
-
 
 export interface Name {
   name: string
