@@ -1,6 +1,7 @@
 import { cleanInput } from "./repl.js";
 import { describe, expect, test } from "vitest";
 
+// Keep parsing tests table-driven so new command-input edge cases are cheap to add.
 describe.each([
   {
     input: "  hello  world  ",
@@ -16,11 +17,11 @@ describe.each([
   },
   {
     input: " HellO World ",
-    expected: ["hello","world"],
+    expected: ["hello", "world"],
   },
   {
     input: "hello, world!",
-    expected: ["hello,","world!"],
+    expected: ["hello,", "world!"],
   },
   {
     input: "hello 123 world",
@@ -29,18 +30,18 @@ describe.each([
   {
     input: "",
     expected: [],
-  }
-  // TODO: more test cases here
+  },
 ])("cleanInput($input)", ({ input, expected }) => {
   test(`Expected: ${expected}`, () => {
     const actual = cleanInput(input);
 
-    // The `expect` and `toHaveLength` functions are from vitest
-    // they will fail the test if the condition is not met
     expect(actual).toHaveLength(expected.length);
     for (const i in expected) {
-      // likewise, the `toBe` function will fail the test if the values are not equal
       expect(actual[i]).toBe(expected[i]);
     }
   });
 });
+
+// NEXT BUILD: add dispatch-level tests with a fake State/readline object so command
+// selection, argument forwarding, unknown commands, and thrown errors can be tested
+// without launching an interactive terminal.
